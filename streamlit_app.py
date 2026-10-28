@@ -104,10 +104,16 @@ if x2_pct <= x1_pct or y2_pct <= y1_pct:
 if mode == "Live webcam":
     st.subheader("Live webcam monitoring")
     st.info("Click START and allow camera access when your browser asks. Camera access works on localhost or an HTTPS website; it usually will not work on a plain HTTP remote IP.")
+    # Initialize state on the Streamlit script thread, then capture plain
+    # Python references before streamlit-webrtc starts its worker thread.
+    # Accessing st.session_state inside video_processor_factory can fail
+    # because that factory may execute outside the ScriptRunContext.
     if "live_events" not in st.session_state:
-        st.session_state.live_events = []
+        st.session_state["live_events"] = []
     if "live_event_lock" not in st.session_state:
-        st.session_state.live_event_lock = threading.Lock()
+        st.session_state["live_event_lock"] = threading.Lock()
+    live_events = st.session_state["live_events"]
+    live_event_lock = st.session_state["live_event_lock"]
 
     rtc_ctx = webrtc_streamer(
         key="smart-intrusion-live-camera",
@@ -116,26 +122,26 @@ if mode == "Live webcam":
         media_stream_constraints={"video": True, "audio": False},
         video_processor_factory=lambda: LiveIntrusionProcessor(
             model_name, confidence, (x1_pct, y1_pct, x2_pct, y2_pct), cooldown,
-            st.session_state.live_events, st.session_state.live_event_lock
+            live_events, live_event_lock
         ),
         async_processing=True,
     )
     col_a, col_b = st.columns(2)
     with col_a:
-        st.metric("Intrusion events", len(st.session_state.live_events))
+        st.metric("Intrusion events", len(live_events))
     with col_b:
         st.metric("Camera", "Running" if rtc_ctx.state.playing else "Stopped")
     with st.expander("Live event log", expanded=True):
-        with st.session_state.live_event_lock:
-            event_snapshot = list(st.session_state.live_events)
+        with live_event_lock:
+            event_snapshot = list(live_events)
         if event_snapshot:
             df_live = pd.DataFrame(event_snapshot)
             st.dataframe(df_live, use_container_width=True, hide_index=True)
             st.download_button("Download event log (CSV)", df_live.to_csv(index=False).encode("utf-8"),
                                file_name="live_intrusion_events.csv", mime="text/csv")
             if st.button("Clear event log"):
-                with st.session_state.live_event_lock:
-                    st.session_state.live_events.clear()
+                with live_event_lock:
+                    live_events.clear()
                 st.rerun()
         else:
             st.caption("No intrusion events recorded yet.")
