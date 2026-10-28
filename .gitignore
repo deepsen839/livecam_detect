@@ -1,0 +1,18 @@
+# Virtual environment
+myenv/
+venv/
+.venv/
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Environment variables
+.env
+
+# ML model files
+*.pt
+# *.onnx
+
+# Optional: logs
+*.log

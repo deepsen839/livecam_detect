@@ -1,0 +1,31 @@
+version: '3.9'
+
+services:
+
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    devices:
+      - "/dev/video0:/dev/video0"
+      - "/dev/video1:/dev/video1"
+    privileged: true
+    volumes:
+      - ./backend:/app/  
+    # depends_on:
+    # - db
+
+  frontend:
+    build: ./UI
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./UI:/app/    
+
+
+  # db:
+  #   image: postgres:16
+  #   environment:
+  #     POSTGRES_DB: intrusion
+  #     POSTGRES_USER: postgres
+  #     POSTGRES_PASSWORD: postgres

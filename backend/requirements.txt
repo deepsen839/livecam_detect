@@ -1,0 +1,14 @@
+fastapi
+uvicorn
+opencv-python-headless
+ultralytics==8.3.0
+sqlalchemy
+psycopg2-binary
+websockets
+python-multipart
+shapely
+pydantic-settings
+lap
+scipy
+supervision
+filterpy
